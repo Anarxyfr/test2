@@ -1,0 +1,56 @@
+# Define the hosts file path
+$hostsPath = "C:\Windows\System32\drivers\etc\hosts"
+
+# List of Roblox domains to block
+$robloxDomains = @(
+    "roblox.com", "www.roblox.com", "api.roblox.com", "auth.roblox.com",
+    "avatar.roblox.com", "chat.roblox.com", "content.roblox.com", "develop.roblox.com",
+    "games.roblox.com", "groups.roblox.com", "web.roblox.com", "assetdelivery.roblox.com",
+    "catalog.roblox.com", "friends.roblox.com", "presence.roblox.com", "thumbnails.roblox.com",
+    "users.roblox.com", "clientsettings.roblox.com", "clientsettingscdn.roblox.com",
+    "abtesting.roblox.com", "accountinformation.roblox.com", "accountsettings.roblox.com",
+    "adconfiguration.roblox.com", "ads.roblox.com", "badges.roblox.com", "billing.roblox.com",
+    "cdnproviders.roblox.com", "chatmoderation.roblox.com", "contacts.roblox.com",
+    "contentstore.roblox.com", "economy.roblox.com", "economycreatorstats.roblox.com",
+    "engagementpayouts.roblox.com", "followings.roblox.com", "gameinternationalization.roblox.com",
+    "gamejoin.roblox.com", "gamepersistence.roblox.com", "groupsmoderation.roblox.com",
+    "inventory.roblox.com", "itemconfiguration.roblox.com", "locale.roblox.com",
+    "localizationtables.roblox.com", "metrics.roblox.com", "midas.roblox.com",
+    "notifications.roblox.com", "points.roblox.com", "premiumfeatures.roblox.com",
+    "privatemessages.roblox.com", "publish.roblox.com", "share.roblox.com",
+    "textfilter.roblox.com", "thumbnailsresizer.roblox.com", "trades.roblox.com",
+    "translationroles.roblox.com", "translations.roblox.com", "twostepverification.roblox.com",
+    "usermoderation.roblox.com", "voice.roblox.com"
+)
+
+# Check if running as admin
+$adminCheck = [System.Security.Principal.WindowsPrincipal][System.Security.Principal.WindowsIdentity]::GetCurrent()
+$adminRole = [System.Security.Principal.WindowsBuiltInRole]::Administrator
+
+if (-not $adminCheck.IsInRole($adminRole)) {
+    Write-Host "This script needs to be run as Administrator!"
+    Start-Sleep 2
+    Exit
+}
+
+# Backup the original hosts file
+Copy-Item -Path $hostsPath -Destination "$hostsPath.bak" -Force
+
+# Add Roblox domains to the hosts file
+foreach ($domain in $robloxDomains) {
+    $entry = "127.0.0.1 $domain"
+    
+    # Check if the domain already exists in hosts file
+    if (!(Select-String -Path $hostsPath -Pattern $domain -Quiet)) {
+        Add-Content -Path $hostsPath -Value $entry
+        Write-Host "[BLOCKED] $domain"
+    } else {
+        Write-Host "[ALREADY BLOCKED] $domain"
+    }
+}
+
+# Flush DNS to apply changes
+Write-Host "Flushing DNS..."
+ipconfig /flushdns
+
+Write-Host "Roblox domains have been blocked successfully!" -ForegroundColor Green
